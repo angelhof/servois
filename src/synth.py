@@ -18,7 +18,7 @@ start_time = time.time()
 # constants
 ########################################
 
-cvc4=['/usr/local/bin/cvc4','--lang','smt2','--produce-models']
+cvc4=['/opt/cvc4','--lang','smt2','--produce-models']
 default_verbosity = 1
 
 ########################################
