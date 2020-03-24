@@ -1,0 +1,44 @@
+# A vector clock, i.e. a vector of counters
+
+name: vectorclock
+
+state:
+  - name: size
+    type: Int
+  - name: contents
+    type: (Array Int Int)
+
+
+states_equal:
+  definition: (= contents_1 contents_2)
+
+methods:
+  - name: increment
+    args:
+      - name: i0
+        type: Int
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (> size i0)
+           (>= i0 0))
+    ensures: |
+      (and (= contents_new (store contents i0 i0))
+           (= result true)
+           (= size_new size))
+# (and (= contents_new (store contents i0 (+ 1 (select contents i0))))
+#      (= result true)
+#      (= size_new size))
+
+    terms:
+      Int: [$1, size, 0, 1]
+      (Array Int Int): [contents, (store contents $1 $1)]
+# Int: [$1, size, 0, 1, (select contents $1), (+ 1 (select contents $1))]
+# (Array Int Int): [contents, (store contents $1 (+ 1 (select contents $1)))]
+
+predicates:
+  - name: "="
+    type: [Int, Int]
+  - name: "="
+    type: [(Array Int Int), (Array Int Int)]
