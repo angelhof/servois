@@ -12,7 +12,7 @@ import yaml
 from parser import *
 
 CACHEFILE="runall_cache.pycache"
-readCache = True
+readCache = False
 writeCache = True
 debug = False
 
@@ -34,16 +34,18 @@ APPENDIXFILE="raw.tex"
 
 FULLRESULTS="fullresults.tex"
 
+datastructures=['VectorClock']
 #datastructures=['Hashtable']
 #datastructures=['Counter']
-datastructures=['Counter','Accumulator','Set','HashTable','Stack','Memory']#,'Queue']
+# datastructures=['Counter','Accumulator','Set','HashTable','Stack','Memory']#,'Queue']
 labels={'Counter':'counter',
         'Counter (lifted, auto-generated)':'counterauto',
         'Accumulator':'accumulator',
         'Set':'set',
         'HashTable':'hashtable',
 	'Memory':'memory',
-        'Stack':'stack'}
+        'Stack':'stack',
+        'VectorClock':'vectorclock'}
 forceruns=[]
 bestopt = '--poke'
 
