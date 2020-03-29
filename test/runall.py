@@ -34,7 +34,8 @@ APPENDIXFILE="raw.tex"
 
 FULLRESULTS="fullresults.tex"
 
-datastructures=['VectorClock']
+# datastructures=['VectorClock']
+datastructures=['CRDTOpCounter']
 #datastructures=['Hashtable']
 #datastructures=['Counter']
 # datastructures=['Counter','Accumulator','Set','HashTable','Stack','Memory']#,'Queue']
@@ -45,7 +46,8 @@ labels={'Counter':'counter',
         'HashTable':'hashtable',
 	'Memory':'memory',
         'Stack':'stack',
-        'VectorClock':'vectorclock'}
+        'VectorClock':'vectorclock',
+        'CRDTOpCounter':'crdtopcounter'}
 forceruns=[]
 bestopt = '--poke'
 
@@ -273,8 +275,8 @@ with open(RESULTSTABLEFILE, 'wb') as output, open(APPENDIXFILE, 'wb') as appendi
         print("\end{itemize}\n", file=appendix)
 
     # Ethereum case-study.
-    print(getPrecondition("../src/synth.py -v --no-generate-predicates blockking.yml enter enter blockking_predicates.txt", False)['output'])
-    print(getPrecondition("../src/synth.py -v --no-generate-predicates blockking_fixed.yml enter enter blockking_predicates.txt", False)['output'])
+    # print(getPrecondition("../src/synth.py -v --no-generate-predicates blockking.yml enter enter blockking_predicates.txt", False)['output'])
+    # print(getPrecondition("../src/synth.py -v --no-generate-predicates blockking_fixed.yml enter enter blockking_predicates.txt", False)['output'])
 
 
 if writeCache:

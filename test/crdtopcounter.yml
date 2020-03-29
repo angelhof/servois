@@ -1,0 +1,102 @@
+# CRDT Op-based Counter (from "Replicated Data Types: Specification, Verification, Optimality")
+
+name: crdtopcounter
+
+state:
+  - name: current
+    type: Int
+  - name: latest
+    type: Int
+
+# current is the current value of the counter, and latest are the
+# increments that haven't been broadcasted.
+
+# Servois also cares about commutativity of return values which is not
+# relevant in the case of CRDTs since we only care about state
+# convergence. Because of that, we always return true (in this case
+# read should normally return the current value)
+
+# Our approach is to encode a CRDT by also encoding its send and
+# receive operations. The preconditions of the receive operation
+# specify what could have happened in other replicas at that time.
+
+# A question that we have to answer is whether this way of encoding
+# CRDTs is sound. And whether proving commutativity for operations
+# together with send and receive is indeed sound.
+
+# We have to relax the definition of state equality as for final
+# convergence we don't care about the latest increments that haven't
+# been broadcasted.
+states_equal:
+  definition: (= current_1 current_2)
+
+methods:
+  - name: increment
+    args: []
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (>= current 0)
+           (>= latest 0))
+    ensures: |
+      (and (= current_new (+ current 1))
+           (= latest_new (+ latest 1))
+           (= result true))
+#     (and (= current_new (+ current 1))
+#          (= latest_new (+ latest 1))
+#          (= result true))
+    terms:
+      Int: [current, 1, (+ current 1), latest, (+ latest 1)]
+  - name: read
+    args: []
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (>= current 0)
+           (>= latest 0))
+    ensures: |
+      (and (= current_new current)
+           (= latest_new latest)
+           (= result true))
+    terms:
+      Int: [current, 0, latest]
+  - name: send
+    args: []
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (>= current 0)
+           (>= latest 0))
+    ensures: |
+      (and (= current_new current)
+           (= latest_new 0)
+           (= result true))
+    terms:
+      Int: [current, 0, latest]
+  - name: receive
+    args:
+      - name: remotelatest
+        type: Int
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (>= current 0)
+           (>= latest 0)
+           (>= remotelatest 0))
+# If we remove the last precondition the tool takes a huge amount of
+# time. Why? It seems to be an issue with CVC4
+    ensures: |
+      (and (= current_new (+ current remotelatest))
+           (= latest_new latest)
+           (= result true))
+    terms:
+      Int: [current, 0, latest, $1, (+ current $1)]
+
+
+predicates:
+  - name: "="
+    type: [Int, Int]
