@@ -35,7 +35,8 @@ APPENDIXFILE="raw.tex"
 FULLRESULTS="fullresults.tex"
 
 # datastructures=['VectorClock']
-datastructures=['CRDTOpCounter']
+datastructures=['CRDTGraph']
+# datastructures=['CRDTOpCounter']
 #datastructures=['Hashtable']
 #datastructures=['Counter']
 # datastructures=['Counter','Accumulator','Set','HashTable','Stack','Memory']#,'Queue']
@@ -47,7 +48,8 @@ labels={'Counter':'counter',
 	'Memory':'memory',
         'Stack':'stack',
         'VectorClock':'vectorclock',
-        'CRDTOpCounter':'crdtopcounter'}
+        'CRDTOpCounter':'crdtopcounter',
+        'CRDTGraph':'crdtgraph'}
 forceruns=[]
 bestopt = '--poke'
 
