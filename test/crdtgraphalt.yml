@@ -32,7 +32,8 @@ state:
 # We never remove an element from it
   - name: Unique
     type: (Set U)
-# A map from the vertices to the unique identifiers
+# A map from the vertices to the unique identifiers.
+# TODO: VerticesSize might be redundant since we can use cardinality
   - name: VerticesSize
     type: (Array E Int)
   - name: VerticesUnique
@@ -60,7 +61,10 @@ methods:
       (and (not (member w Unique))
            (= (member v Vertices)
               (> (select VerticesSize v) 0)
-              (> (card (select VerticesUnique v)) 0)))
+              (> (card (select VerticesUnique v)) 0))
+           (= (not (member w Unique))
+              (forall ((vw E)) (not (member w (select VerticesUnique v))))))
+# The second and third conjuncts are part of the invariant
     ensures: |
       (and result
            (= Unique_new (insert w Unique))
@@ -80,6 +84,9 @@ methods:
 # TODO: Complete this (It is unclear what its purpose is though. Maybe to find predicates?)
 #      (Set E): [S, (singleton $1), (union S (singleton $1))]
 
+# At the moment removeVertex doesn't commute with addVertex and that is reasonable because
+# if the prepare of removeVertex is performed after addVertex on a node then it will remove that Node.
+# The point is to check whether the effect of removeVertex commutes with add
   - name: removevertex
     args:
       - name: v
@@ -98,10 +105,27 @@ methods:
             result)
     terms:
       E: [$1]
-#      (Set U): [Unique]
-#      (Set (Pair E U)): [Vertices]
-# TODO: Complete this
-#      (Set E): [S, (singleton $1), (union S (singleton $1))]
+#   - name: removevertexeffect
+#     args:
+#       - name: v
+#         type: E
+#       - name: vunique
+#         type: (Set U)
+#     return:
+#       - name: result
+#         type: Bool
+#     requires: |
+#        true
+# # TODO: What should the precondition be for v_unique?
+#     ensures: |
+#        (and (= VerticesUnique_new
+#                  (store VerticesUnique v
+#                      (setminus (select VerticesUnique v) vunique)))
+#             result)
+# # TODO: Complete that, either by asserting that the invariant is preserved, or by explicitly
+# #       removing the vertex if the set of its unique values is now empty
+#     terms:
+#       E: [$1]
 
 predicates:
   - name: "="
