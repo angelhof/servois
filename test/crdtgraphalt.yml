@@ -1,0 +1,84 @@
+name: crdtgraph
+
+
+# The type of nodes
+preamble: |
+  (declare-sort E 0)
+  (declare-sort U 0)
+  (declare-datatypes ( (Pair 2) ) (
+    (par (X Y) ( (pair (first X) (second Y)) ))))
+
+# Note: It seems that we need to gradually fill the terms and
+# predicates if we see that the tool can't prove commutativity. Doing
+# it prematurely doesn't offer anything.
+
+# TODO: We need to check that making small mistakes leads the tool to
+# failure in order to increase confidence that we haven't made
+# overassumptions.
+
+# Note: In the final result, we don't care about the commutativity of
+# two prepare-effect methods (simply because they would have been
+# executed in the same replica). We care about the commutativity of
+# effects with prepare-effect, and effect methods.
+
+# The three vertices parts of the state must correspond. 
+
+state:
+# The set of vertices
+  - name: Vertices
+    type: (Set E)
+# The set of unique values w
+  - name: Unique
+    type: (Set U)
+# A map from the vertices to the unique identifiers
+  - name: VerticesSize
+    type: (Array E Int)
+  - name: VerticesUnique
+    type: (Array E (Set U))
+
+# The two states are equal if their vertices and arcs are equal
+# (Maybe this has to be relaxed to not account for unique values w)
+states_equal:
+  definition: (and (= Vertices_1 Vertices_2))
+
+methods:
+  - name: removevertex
+    args:
+      - name: v
+        type: E
+    return:
+      - name: result
+        type: Bool
+    requires: |
+       (and (member v Vertices)
+            (> (select VerticesSize v) 0))
+    ensures: |
+       (and (= Vertices_new (setminus Vertices (singleton v)))
+            (= Unique_new Unique)
+            (= VerticesSize_new (store VerticesSize v 0))
+            (= VerticesUnique_new (store VerticesUnique v (as emptyset (Set U))))
+            result)
+    terms:
+      E: [$1]
+#      (Set U): [Unique]
+#      (Set (Pair E U)): [Vertices]
+# TODO: Complete this
+#      (Set E): [S, (singleton $1), (union S (singleton $1))]
+
+predicates:
+  - name: "="
+    type: [E, E]
+  - name: "="
+    type: [U, U]
+#  - name: "="
+#    type: [(Pair E U), (Pair E U)]
+#  - name: "="
+#    type: [(Set (Pair E U)), (Set (Pair E U))]
+  - name: "="
+    type: [(Set U), (Set U)]
+  - name: "member"
+    type: [E, (Set E)]
+  - name: "member"
+    type: [U, (Set U)]
+#  - name: "member"
+#    type: [(Pair E U), (Set (Pair E U))]
