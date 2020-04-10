@@ -21,13 +21,15 @@ preamble: |
 # executed in the same replica). We care about the commutativity of
 # effects with prepare-effect, and effect methods.
 
-# The three vertices parts of the state must correspond. 
+# The three vertices parts of the state must correspond.
+# Invariant: v in Vertices <=> VerticesSize[v] >= 0 <=> not empty(VerticesUnique[v])
 
 state:
 # The set of vertices
   - name: Vertices
     type: (Set E)
-# The set of unique values w
+# The set of unique values w. This has to continuously grow.
+# We never remove an element from it
   - name: Unique
     type: (Set U)
 # A map from the vertices to the unique identifiers
@@ -42,6 +44,42 @@ states_equal:
   definition: (and (= Vertices_1 Vertices_2))
 
 methods:
+# The effect of addvertex seems to be the same as its complete method
+  - name: addvertex
+    args:
+      - name: v
+        type: E
+# We encode w as part of the arguments as there doesn't seem to be a way to
+# generate an arbitrary unique value in the method.
+      - name: w
+        type: U
+    return:
+      - name: result
+        type: Bool
+    requires: |
+      (and (not (member w Unique))
+           (= (member v Vertices)
+              (> (select VerticesSize v) 0)
+              (> (card (select VerticesUnique v)) 0)))
+    ensures: |
+      (and result
+           (= Unique_new (insert w Unique))
+           (ite (member v Vertices)
+                (and (= VerticesSize_new (store VerticesSize v (+ 1 (select VerticesSize v))))
+                     (= VerticesUnique_new (store VerticesUnique v (insert w (select VerticesUnique v))))
+                     (= Vertices_new Vertices))
+                (and (= VerticesSize_new (store VerticesSize v 1))
+                     (= VerticesUnique_new (store VerticesUnique v (singleton w)))
+                     (= Vertices_new (insert v Vertices)))))
+# If the vertex is already in, then we add one more unique value to it
+#
+# If the vertex is not in, then we only add a singleton to it
+    terms:
+      E: [$1]
+      U: [$2]
+# TODO: Complete this (It is unclear what its purpose is though. Maybe to find predicates?)
+#      (Set E): [S, (singleton $1), (union S (singleton $1))]
+
   - name: removevertex
     args:
       - name: v
