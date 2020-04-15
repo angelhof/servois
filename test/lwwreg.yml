@@ -32,7 +32,8 @@ methods:
 # Since we only keep the latest one,
 # we only need to require that any timestamp is not the same as this.
     requires: |
-      (not (member t SeenTimestamps))
+       (not (= t Timestamp))
+#      (not (member t SeenTimestamps))
     ensures: |
       (and result
            (= SeenTimestamps_new (insert t SeenTimestamps))

@@ -36,6 +36,10 @@ FULLRESULTS="fullresults.tex"
 
 # datastructures=['VectorClock']
 datastructures=['CRDTGraph']
+datastructures=['CRDTGraphAlt']
+datastructures=['2PGraph']
+datastructures=['2PSet']
+datastructures=['LWWReg']
 # datastructures=['CRDTOpCounter']
 #datastructures=['Hashtable']
 #datastructures=['Counter']
@@ -49,7 +53,11 @@ labels={'Counter':'counter',
         'Stack':'stack',
         'VectorClock':'vectorclock',
         'CRDTOpCounter':'crdtopcounter',
-        'CRDTGraph':'crdtgraph'}
+        'CRDTGraph':'crdtgraph',
+        'CRDTGraphAlt':'crdtgraphalt',
+        '2PGraph':'2pgraph',
+        '2PSet':'2pset',
+        'LWWReg':'lwwreg'}
 forceruns=[]
 bestopt = '--poke'
 
