@@ -1,47 +1,29 @@
 name: 2pset
 
-
 # The type of nodes
 preamble: |
-  (declare-sort E 0)
-  (declare-sort U 0)
-  (declare-datatypes ( (Pair 2) ) (
-    (par (X Y) ( (pair (first X) (second Y)) ))))
-
-# Note: It seems that we need to gradually fill the terms and
-# predicates if we see that the tool can't prove commutativity. Doing
-# it prematurely doesn't offer anything.
-
-# TODO: We need to check that making small mistakes leads the tool to
-# failure in order to increase confidence that we haven't made
-# overassumptions.
+  (declare-sort V 0)
 
 # Note: In the final result, we don't care about the commutativity of
 # two prepare-effect methods (simply because they would have been
 # executed in the same replica). We care about the commutativity of
 # effects with prepare-effect, and effect methods.
 
-# The three vertices parts of the state must correspond.
-# Invariant: v in Vertices <=> VerticesSize[v] >= 0 <=> not empty(VerticesUnique[v])
 
 state:
-# The set of vertices
   - name: Add
-    type: (Set E)
+    type: (Set V)
   - name: Remove
-    type: (Set E)
+    type: (Set V)
 
-# The two states are equal if their vertices and arcs are equal
-# (Maybe this has to be relaxed to not account for unique values w)
 states_equal:
-  definition: (and (= Add_1 Add_2))
+  definition: (and (= Add_1 Add_2) (= Remove_1 Remove_2))
 
 methods:
-# The effect of addvertex seems to be the same as its complete method
   - name: add
     args:
       - name: v
-        type: E
+        type: V
     return:
       - name: result
         type: Bool
@@ -52,14 +34,11 @@ methods:
            (= Add_new (union (setminus (singleton v) Remove) Add))
            (= Remove_new Remove))
     terms:
-      E: [$1]
-# TODO: Complete this (It is unclear what its purpose is though. Maybe to find predicates?)
-#      (Set E): [S, (singleton $1), (union S (singleton $1))]
-
+      V: [$1]
   - name: remove
     args:
       - name: v
-        type: E
+        type: V
     return:
       - name: result
         type: Bool
@@ -70,22 +49,10 @@ methods:
             (= Add_new (setminus Add (singleton v)))
             (= Remove_new (insert v Remove)))
     terms:
-      E: [$1]
+      V: [$1]
 
 predicates:
   - name: "="
-    type: [E, E]
-  - name: "="
-    type: [U, U]
-#  - name: "="
-#    type: [(Pair E U), (Pair E U)]
-#  - name: "="
-#    type: [(Set (Pair E U)), (Set (Pair E U))]
-  - name: "="
-    type: [(Set U), (Set U)]
+    type: [V, V]
   - name: "member"
-    type: [E, (Set E)]
-  - name: "member"
-    type: [U, (Set U)]
-#  - name: "member"
-#    type: [(Pair E U), (Set (Pair E U))]
+    type: [V, (Set V)]
