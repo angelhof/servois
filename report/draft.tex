@@ -87,14 +87,24 @@ consider two states to be equivalent if they have the same value $x$.
 We started by encoding the state as is (a value $x$ of any type $X$
 and a timestamp $t$ of type $Int$) and by encoding the $assign$ effect
 by only requiring as a precondition that $t' \neq t$, in order to
-enforce timestamp uniqueness. \TODO{Finish this}
+enforce timestamp uniqueness. Servois quickly retuned the following
+counterexample:
 
-%% Servois quickly retuned the following
-%% counterexample:
+\[
+t_1' = t \vee t_2' = t
+\]
 
-%% \[
-%% x_1 \neq x_2 \wedge t_1 = t_2 \wedge t
-%% \]
+\TODO{Gautam: Do you understand why exactly does this fail? It is in
+  line 36,37 of lwwreg.yml} Servois found that if one of the effect
+timestamps $t_1', t_2'$ is equal to the initial timestamp $t$, then
+executing them in different orders will lead to one of them not
+satisfying the precondition once, but satisfying it in the other
+run. However, this behaviour is disallowed by the LWW specification
+since all new timestamps $t'$ are unique.
+
+In order to deal with that, we extended the state to keep a set of all
+seen timestamps, and we modified the precondition to require that
+\TODO{Finish this.}
 
 
 \TODO{Describe how we implemented it, and why we need to have a set of seen Timestamps to enforce uniqueness.}
