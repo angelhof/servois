@@ -32,7 +32,7 @@
 
 \begin{document}
 
-\title{CIS 673 Project Report}
+\title{Commutativity of operation-based CRDTs \\ CIS 673 Project Report}
 \author{Gautam Mohan and Konstantinos Kallas}
 
 
@@ -48,15 +48,70 @@
 \TODO{Describe the technique briefly} \TODO{Describe the tool
   interface. What exactly one has to encode and why}
 
-\section{Conflict Free Replicated Data Types}
+\section{Conflict-Free Replicated Data Types}
 
-\TODO{Fill in with some background information on CRDTs}~\cite{shapiro2011conflict}
+Conflict-free replicated data types are objects that can be
+implemented on top of eventually consistent datastores guaranteeing
+strong convergence without any need for conflict resolution or
+roll-back. Conflict-freedom ensures safety and liveness despite any
+number of failures. This section contains necessary background
+information for CRDTs that is adapted from~\cite{shapiro2011conflict}.
 
-\TODO{Say something about both State and Op-based CRDTs.}
+The standard correctness condition for conflict-free replicated data
+types is strong eventual consistency (SEC), which is slightly stronger
+than eventual consistency. Its main difference is strong convergence,
+namely that replicas that have delivered the same updates have
+equivalent states. Objects that are SEC can be implemented on top of
+replicated data stores that do not synchronize, allowing them to be
+always available for both reads and writes independently of network
+conditions.
 
-\TODO{State correctness conditions Op-based only}
+Conflict-free replicated data types can be classified in two types,
+the state-based ones and the operation-based ones. The intuitive
+difference is that in state-based CRDTs replicas merge their states
+periodically, while in operation-based CRDTs all replicas broadcast
+all of their updates to all other replicas. Both types of CRDTs can be
+proven to be SEC given some conditions on their specifications
+hold. In this project we focus on operation-based CRDTs, since their
+correctness, i.e. satisfying strong eventual consistency, is implied
+by their commutativity of their operations.
 
-\TODO{Say why we only need to prove commut of effects}
+\subsection{Operation-based CRDTs}
+
+An op-based object can be specified by the following tuple $(S, s^0,
+Q, U)$, where $S$ is the state domain, $s^0$ is the initial state, $Q$
+is a set of query methods, and $U$ are update methods. Update methods
+are split into a pair $(t,u)$, where $t$ is a side-effect-free
+\texttt{prepare} method and $u$ is an \texttt{effect} method (the
+arguments of which may differ. Both \texttt{prepare} and
+\texttt{effect} methods have enabling preconditions. The
+\texttt{prepare} method is executed at a single replica where the
+operation is invoked, generating the arguments for the \texttt{effect}
+without modifying the state. The \texttt{effect} is executed
+immediately after it in that replica, and it is then broadcast to all
+other replicas for execution.
+
+An important assumption is that the underlying broadcast communication
+protocol delivers messages preserving causal order. This means that if
+a \texttt{prepare} $t_j$ is executed on a replica after it has
+received an effect $e_i$, then all other replicas will receive $e_j$
+after they receive $e_i$. Concurrent updates (i.e. ones that happened
+in different source replicas can be delivered in any order.
+
+Given these assumptions, they prove in
+Theorem~2.2~\cite{shapiro2011conflict} that the commutativity of all
+concurrent effect operations of an op-based CRDT is a sufficient
+condition for convergence. Note that they make one more assumption,
+namely that causally-ordered broadcast is sufficient to ensure that an
+effect is enabled in all other replicas if it was enabled in the
+initial one.
+
+%% Effect precondition may require that an effect is delayed, so in order
+%% to prove convergence, one would need to prove liveness, that
+%% eventually an effects precondition is satisfied. They only focus on
+%% effect preconditions that are satisfied by the delivery order in that
+%% paper, and that is what we focus on too.
+
 
 \section{Methodology}
 
@@ -86,21 +141,25 @@ as methods in Servois as they never update the state.
 
 We now describe how to encode the update methods. Each update method
 has two parts, a \texttt{prepare} and an \texttt{effect}. In Servois
-we only encode effects as methods, as we care about how concurrent
-updates (that happened in different replicas) can affect the state of
-another replica. Intuitively, we want to show that the effects $e_1$,
-$e_2$ of two concurrent updates $u_1$, $u_2$ that happened in replicas
-$r_1$ and $r_2$ will commute in a third replica $r_3$. In order to
-correctly do that, we need to derive preconditions for all the effect
-methods by using their prepare methods. More precisely, the
-precondition on the arguments of an effect $e$ of an update $u$ that
-happened in a replica with state $s'$ must be equivalent to the
-postcondition of $u$'s prepare method after it has been applied
-$s'$. \TODO{Is that valid?}
+we only encode effects as methods, as we are only interested in the
+commutativity of concurrent updates.
+%% \TODO{Briefly mention that we don't care about commutativity of
+%%   prepare-effect with effect because of the underlying causal
+%%   delivery protocol.}
+Intuitively, we want to show that the effects $e_1$, $e_2$ of two
+concurrent updates $u_1$, $u_2$ that happened in replicas $r_1$ and
+$r_2$ will commute in a third replica $r_3$. In order to correctly do
+that, we need to derive preconditions for all the effect methods by
+using their prepare methods. More precisely, the precondition on the
+arguments of an effect $e$ of an update $u$ that happened in a replica
+with state $s'$ must be equivalent to the postcondition of $u$'s
+prepare method after it has been applied $s'$.
+%% \TODO{Is that valid?}
 
-\TODO{Figure out what we have to do with effect preconditions. Maybe
-  we need to encode them with ite to make sure that if they fail, it
-  means that an update is not enabled when it should be?}
+\TODO{(Maybe -- If we have time) Figure out what we have to do with
+  effect preconditions. Maybe we need to encode them with ite to make
+  sure that if they fail, it means that an update is not enabled when
+  it should be?}
 
 
 Finally, since Servois is sound, i.e. it never concludes that two
@@ -109,9 +168,20 @@ empty and gradually extend them if we find that Servois is unable to
 give an answer \TODO{Check the validity of the above statement by
   reading the Servois paper}.
 
-\TODO{Briefly mention the threats to validity, the fact that we derive
-  preconditions based on prepare methods but we don't check them, and
-  the fact that we manually encode the postconditions of each method.}
+\paragraph{Threats to validity:} 
+
+We would like to briefly mention two threats to the validity of our
+methodology. First, both \texttt{effect} pre and postconditions are
+derived from the specification manually, introducing a possible point
+of error. Second, we do not check whether the delivery preconditions
+of \texttt{effect} methods are indeed satisfied by the causal delivery
+order (similarly to~\cite{shapiro2011conflict}).
+
+%% \TODO{Briefly mention the threats to validity, the fact that we derive
+%%   preconditions based on prepare methods but we don't check them, and
+%%   the fact that we manually encode the postconditions of each
+%%   method. Also that we don't check whether delivery preconditions (of
+%%   effects) are indeed satisfied by the causal delivery order.}
 
 \section{Experience Report}
 
@@ -180,7 +250,7 @@ never be added again. Their definitions are shown in
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{grow-only-set-definition}
+    \includegraphics[width=0.4\textwidth]{grow-only-set-definition}
     \caption{Grow-only Set}
     \label{fig:gset-def}
 \end{figure}
