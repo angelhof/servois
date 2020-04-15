@@ -1,0 +1,54 @@
+name: lwwreg
+
+preamble: |
+  (declare-sort E 0)
+
+# Just putting the new timestamp t be different from Timestamp is not enough.
+# We need to have a set of all seen timestamps until now
+
+state:
+  - name: Value
+    type: E
+  - name: Timestamp
+    type: Int
+  - name: SeenTimestamps
+    type: (Set Int)
+
+## Encoding observational equivalence
+states_equal:
+  definition: (and (= Value_1 Value_2))
+
+methods:
+  - name: assign
+    args:
+      - name: v
+        type: E
+      - name: t
+        type: Int
+    return:
+      - name: result
+        type: Bool
+# We require that all timestamps are unique.
+# Since we only keep the latest one,
+# we only need to require that any timestamp is not the same as this.
+    requires: |
+      (not (member t SeenTimestamps))
+    ensures: |
+      (and result
+           (= SeenTimestamps_new (insert t SeenTimestamps))
+           (ite (> t Timestamp)
+                (and (= Timestamp_new t)
+                     (= Value_new v))
+                (and (= Timestamp_new Timestamp)
+                     (= Value_new Value))))
+    terms:
+      E: [$1, Value]
+      Int: [$2, Timestamp]
+
+predicates:
+  - name: "="
+    type: [Int, Int]
+  - name: ">"
+    type: [Int, Int]
+  - name: "="
+    type: [E, E]
