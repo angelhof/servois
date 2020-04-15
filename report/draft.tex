@@ -56,12 +56,20 @@
 
 \section{Experience Report}
 
+In this section we describe our experience from proving that several
+operation-based CRDTs commute. We briefly describe the semantics of
+each CRDT and then explain how we encoded them in the Servois
+interface.
 
 \subsection{Last Writer Wins Register}
 
 We first encoded the simple last writer wins register from
 \cite{shapiro2011comprehensive}. Its specification is shown in
-\Cref{fig:lww-def}. \TODO{Describe the LWW Register.}
+\Cref{fig:lww-def}. A last writer wins register is a simple register
+data type with one value that can be updated and read. It creates a
+total order of assignments by associating a unique timestamp with each
+update. By always keeping the value with the latest timestamp its
+updates commute with each other.
 
 \begin{figure}[h]
     \centering
@@ -69,6 +77,25 @@ We first encoded the simple last writer wins register from
     \caption{Last Writer Wins Register}
     \label{fig:lww-def}
 \end{figure}
+
+In order to prove that the LWW Register is Strongly Eventually
+Consistent, we need to prove that all different concurrent effects
+(indicated as ``downstream'' in \cref{fig:lww-def}) commute. Since
+only the value $x$ of the register can be returned using queries, we
+consider two states to be equivalent if they have the same value $x$.
+
+We started by encoding the state as is (a value $x$ of any type $X$
+and a timestamp $t$ of type $Int$) and by encoding the $assign$ effect
+by only requiring as a precondition that $t' \neq t$, in order to
+enforce timestamp uniqueness. \TODO{Finish this}
+
+%% Servois quickly retuned the following
+%% counterexample:
+
+%% \[
+%% x_1 \neq x_2 \wedge t_1 = t_2 \wedge t
+%% \]
+
 
 \TODO{Describe how we implemented it, and why we need to have a set of seen Timestamps to enforce uniqueness.}
 
