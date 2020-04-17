@@ -40,13 +40,62 @@
 
 \section{Introduction}
 
-\TODO{Motivate CRDTs and why it makes sense to verify them
-  automatically.}
+Modern day distributed programming presents many challenges. One
+key issue that has been well-studied is the idea of maintaining consistency
+between replicated instances of data. There are many algorithms and
+protocols that present solutions with differing tradeoffs. One major
+source of complexity that occurs across various solutions is the idea of
+resolving conflicts. If two replicated instances of data receive conflicting
+updates separately, how should we specify the merge of these two versions?
+
+Conflict-Free Replicated Data Types (CRDTs) are a recent solution that attempts
+to sidestep the issue of merge conflicts. These data structures have semantics
+for merging built in to their specification, and ensure that updates made in any
+order at any replicas will always commute, and therefore never be in conflict.
+However, one downside of these guarantees is the limited sorts of data
+structures that have been currently proven to be CRDTs. Furthermore, CRDT
+correctness proofs must currently be done manually.
+
+The goal of our project is to reduce the burden of manually verifying that
+methods of CRDTs commute (a necessary condition to them being conflict-free). We
+employ a tool called Servois that is able to automatically generate
+commutativity conditions given pre- and postconditions of an abstract data type.
+By helping to automate the verification process of CRDTs, we hope that more data
+structures can be proven to be conflict-free, which would allow programmers
+richer abstractions they could use to write programs.
 
 \section{Servois}
 
-\TODO{Describe the technique briefly} \TODO{Describe the tool
-  interface. What exactly one has to encode and why}
+Servois \cite{Bansal2018Servois} is a tool that automatically computes the
+commutativity (and non-commutativity) conditions of abstract data types (ADTs). Unlike
+previous tools that relied on random sampling or blackbox testing, Servois is
+able to generate conservative approximations of commutativity conditions that
+are guaranteed to be sound, even if they are partial. Servois is
+\textit{relatively complete}: if it terminates, the commutativity conditions are
+guaranteed to be complete but termination is not guaranteed.
+
+Servois' algorithm can be thought of as similar to counterexample-guided
+abstraction refinement. At a high-level, it starts with a coarse partitioning of
+the state space and recursively divides it based on increasingly stronger
+predicates. Given a partition of the state space corresponding to a certain
+predicate, Servois first checks if the ADT is commutative or non-commutative
+given that predicate as a precondition on inputs. If it is, no more work is
+performed and the predicate is added to the commutativity conditions. If there
+are inputs satisfying the predicate that are both commutative and
+non-commutative, Servois uses them as counterexamples and partitions the space
+recursively. It stops only when the entire state space has been partitioned
+completely into commutative or non-commutative sections, or if the user manually
+halts the algorithm, in which case Servois returns an overapproximation of the
+commutativity conditions.
+
+Servois is an ideal tool to use in this project to alleviate the burden of
+performing manual proofs on whether or not methods of a CRDT commute. The only
+input it requires is the methods of the datatype whose correctness conditions
+are specified as pre- and post-conditions in decidable SMT theories. Since CRDTs
+are meant to be specified the same as ordinary ADTs, it is straightforward to
+encode them in this format. For our project we have specified the correctness
+pre- and postconditions manually, but it would be interesting future work to see
+if these invariants could be extracted automatically based on the code.
 
 \section{Conflict-Free Replicated Data Types}
 
@@ -310,11 +359,41 @@ specifically the state definition and the effect of the \texttt{add}.
 
 \subsection{Graph CRDTs}
 
-Say some things about the graph in section 5 of
-\cite{shapiro2011conflict} and specification 16 from
-\cite{shapiro2011comprehensive}.
+Our final attempt to encode a CRDT was the directed graph specified in Section 5
+of \cite{shapiro2011conflict}. It allows for conflict-free queries, additions,
+and deletions of nodes and edges. The specification for the directed graph CRDT
+can be seen in \Cref{fig:graph-def}. At a high-level, this graph allows for
+simultaneous additions and deletions of vertices and edges across replicas.
+These updates are reflected as sets representing the change made by each
+operation, and periodically these deltas are sent as updates to all other
+replicas. The mechanism by which we are able to handle duplicate
+insertions/references is by associating every vertex and edge with a unique tag.
 
-\TODO{Describe where we got stuck and why.}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{directed-graph-def}
+    \caption{Op-based Directed Graph Specification}
+    \label{fig:graph-def}
+\end{figure}
+
+
+We were able to come up with a straightforward translation of the spec using
+CVC4's theory of sets and arrays. However, there were two main issues that
+prevented Servois from being able to find commutativity conditions. The
+\textit{removeVertex} and \textit{removeArc} (edge) preconditions have an
+$\exists$ condition, and CVC4 would immediately return ``unknown'' when queried.
+Though we do not know exactly why this occurred, we suspect it is because of the
+nested quantification that occurs when introducing an $\exists$ clause in the
+specification. Even when we refactored the logic to use a $\forall$, CVC4 still
+could not solve the query.
+
+Many of the more complex CRDT specifications contained specifications that
+involved quantifiers. It would be interesting to see if these could be
+refactored to be quantifier-free. It is important to note that all the example
+CRDTs in the Servois paper had quantifier-free encodings. Furthermore, their
+method was careful to come up with alternative formulations that avoided
+``$\forall\exists$'' quantifier alternation, which they noted would make queries
+undecidable \cite{bansal2018servois}.
 
 %% Bibliography
 \bibliography{./draft}
