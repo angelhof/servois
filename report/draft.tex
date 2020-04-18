@@ -205,10 +205,10 @@ with state $s'$ must be equivalent to the postcondition of $u$'s
 prepare method after it has been applied $s'$.
 %% \TODO{Is that valid?}
 
-\TODO{(Maybe -- If we have time) Figure out what we have to do with
-  effect preconditions. Maybe we need to encode them with ite to make
-  sure that if they fail, it means that an update is not enabled when
-  it should be?}
+%% \TODO{(Maybe -- If we have time) Figure out what we have to do with
+%%   effect preconditions. Maybe we need to encode them with ite to make
+%%   sure that if they fail, it means that an update is not enabled when
+%%   it should be?}
 
 
 Finally, since Servois is sound, i.e. it never concludes that two
@@ -257,34 +257,31 @@ updates commute with each other.
 
 In order to prove that the LWW Register is Strongly Eventually
 Consistent, we need to prove that all different concurrent effects
-(indicated as ``downstream'' in \cref{fig:lww-def}) commute. Since
-only the value $x$ of the register can be returned using queries, we
-consider two states to be equivalent if they have the same value $x$.
+(indicated as ``downstream'' in \cref{fig:lww-def}) commute. We
+consider the Since only the value $x$ of the register can be returned
+using queries, we consider two states to be equivalent if their values
+$x$ and timestamps $t$ are equal.
 
-We started by encoding the state as is (a value $x$ of any type $X$
-and a timestamp $t$ of type $Int$) and by encoding the $assign$ effect
-by only requiring as a precondition that $t' \neq t$, in order to
-enforce timestamp uniqueness. Servois quickly retuned the following
-counterexample:
+We started by encoding the state as a value $x$ of any type $X$ and a
+timestamp $t$ of type $Int$. In order to encode the \texttt{effect} of
+the $assign$ method we need to ensure that the timestamp $t'$ is
+unique. In order to achieve that, we need to extend the state with an
+additional component $SeenTimestamps$ that contains the set of all
+timestamps that have been encountered so far. This auxiliary component
+can be used to encode uniqueness as the \texttt{effect}-method
+precondition:
 
 \[
-t_1' = t \vee t_2' = t
+t' \not \in SeenTimestamps \wedge t \in SeenTimestamps
 \]
 
-\TODO{Gautam: Do you understand why exactly does this fail? It is in
-  line 36,37 of lwwreg.yml} Servois found that if one of the effect
-timestamps $t_1', t_2'$ is equal to the initial timestamp $t$, then
-executing them in different orders will lead to one of them not
-satisfying the precondition once, but satisfying it in the other
-run. However, this behaviour is disallowed by the LWW specification
-since all new timestamps $t'$ are unique.
+\noindent
+This ensures that all new timestamps cannot be in the set of seen
+timestamps and that the current timestamp is in the set (which is an
+invariant). We then specified the effect method postconditions as seen
+in its specification. Servois successfully verified that the effect
+method commutes with itself.
 
-In order to deal with that, we extended the state to keep a set of all
-seen timestamps, and we modified the precondition to require that
-\TODO{Finish this.}
-
-
-\TODO{Describe how we implemented it, and why we need to have a set of seen Timestamps to enforce uniqueness.}
 
 \subsection{Grow-only Set and Two-Phase Set}
 
