@@ -16,7 +16,8 @@ state:
 
 ## Encoding observational equivalence
 states_equal:
-  definition: (and (= Value_1 Value_2))
+  definition: (and (= Value_1 Value_2)
+                   (= Timestamp_1 Timestamp_2))
 
 methods:
   - name: assign
@@ -29,11 +30,10 @@ methods:
       - name: result
         type: Bool
 # We require that all timestamps are unique.
-# Since we only keep the latest one,
-# we only need to require that any timestamp is not the same as this.
+# Old (non-adequate) precondition:
+#     (not (= t Timestamp))
     requires: |
-       (not (= t Timestamp))
-#      (not (member t SeenTimestamps))
+      (and (not (member t SeenTimestamps)) (member Timestamp SeenTimestamps))
     ensures: |
       (and result
            (= SeenTimestamps_new (insert t SeenTimestamps))
@@ -45,6 +45,7 @@ methods:
     terms:
       E: [$1, Value]
       Int: [$2, Timestamp]
+      (Set Int): [SeenTimestamps]
 
 predicates:
   - name: "="
@@ -53,3 +54,5 @@ predicates:
     type: [Int, Int]
   - name: "="
     type: [E, E]
+  - name: "member"
+    type: [Int, (Set Int)]
